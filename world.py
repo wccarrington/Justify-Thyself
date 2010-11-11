@@ -129,13 +129,14 @@ class Game(World):
         self.push = False
         self.pushtime = 0
     def draw(self):
+        glLoadIdentity()
+        glTranslate(-self.ball.body.position.x + 2, -self.ball.body.position.y + 1.5, 0.0)
         draw_ball(self.ball)
         draw_ground(self.ground)
     def keydown(self, key):
         if key == pygame.K_RIGHT:
             self.push = True
             self.pushtime = 0
-            print 'push'
             self.ball.body.apply_force((0.4,0.0), (0.0, -1.0))
             self.ball.body.apply_force((-0.4,0.0), (0.0, 1.0))
     def keyup(self,key):
