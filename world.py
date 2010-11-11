@@ -120,7 +120,7 @@ def add_ball(space):
 def add_ground(space, pos):
     body = pymunk.Body(pymunk.inf, pymunk.inf)
     body.position = pos
-    shape = pymunk.Poly(body, [(0.0, 0.0), (10.0, -0.5), (10.0, 1.0), (0.0, 1.0)])
+    shape = pymunk.Poly(body, [(0.0, 0.0), (10.0, -0.5), (10.0, 2.0), (0.0, 2.0)])
     shape.friction = 0.5
     space.add_static(shape)
     return shape
@@ -132,11 +132,6 @@ def draw_ground(ground):
     for p in points:
         glVertex(p[0], p[1], 0.0)
     glEnd()
-#    x,y = ground.body.position.x, ground.body.position.y
-#    glBegin(GL_LINES)
-#    glVertex(x+ground.a.x, y+ground.a.y, 0.0)
-#    glVertex(x+ground.b.x, y+ground.b.y, 0.0)
-#    glEnd()
 
 def draw_ball(ball):
     x, y = ball.body.position.x, ball.body.position.y
@@ -145,6 +140,16 @@ def draw_ball(ball):
     glBegin(GL_POLYGON)
     for p in points:
         glVertex(p[0], p[1], 0.0)
+    glEnd()
+
+def draw_bg(pos):
+    glTranslate(pos[0], pos[1], 0.0)
+    glColor(1.0, 0.0, 0.0)
+    glBegin(GL_QUADS)
+    glVertex(0.0, 0.0, 0.0)
+    glVertex(1.0, 0.0, 0.0)
+    glVertex(1.0, 1.0, 0.0)
+    glVertex(0.0, 1.0, 0.0)
     glEnd()
 
 class Game(World):
@@ -158,6 +163,8 @@ class Game(World):
         self.pushtime = 0
         self.nextpronouncement = "Justify Thyself"
         self.pronouncementtimer = 0
+        self.bgpos = (0,0)
+        self.campos = (0,100000)
     def keydown(self, key):
         if key == pygame.K_RIGHT:
             self.push = True
@@ -169,14 +176,17 @@ class Game(World):
             self.push = False
             self.ball.body.apply_impulse((0.0, -0.1), (0.0, 0.0))
     def draw(self):
-        if self.pronouncementtimer < 0.0:
-            glColor(1.0, 1.0, 1.0, 1.0+self.pronouncementtimer/5.0)
-            drawtext((2.0, 0.5), self.nextpronouncement)
         glLoadIdentity()
-        glTranslate(-self.ball.body.position.x + 2, -self.ball.body.position.y + 1.5, 0.0)
+        glTranslate(-self.campos[0] + 2, -self.campos[1] + 1.5, 0.0)
         draw_ball(self.ball)
         draw_ground(self.ground)
         draw_ground(self.nextground)
+        draw_bg(self.bgpos)
+        glLoadIdentity()
+        glTranslate(0.0, 0.0, 1.0)
+        if self.pronouncementtimer < 0.0:
+            glColor(1.0, 1.0, 1.0, 1.0+self.pronouncementtimer/5.0)
+            drawtext((2.0, 0.5), self.nextpronouncement)
     def step(self, dt):
         self.pronouncementtimer -= dt
         if self.pronouncementtimer < -5.0:
@@ -190,3 +200,9 @@ class Game(World):
         if not self.push:
             self.ball.body.reset_forces()
         self.space.step(dt)
+        self.campos = (self.ball.body.position[0], min(self.campos[1], self.ball.body.position[1]))
+        self.bgpos = (self.campos[0]*.9 + 2 + (6 * int(self.campos[0]/60)), self.campos[1]*.9 - 1.0)
+        if self.ball.body.position.x > self.nextground.body.position.x + 4:
+            self.space.remove_static(self.ground)
+            self.ground = self.nextground
+            self.nextground = add_ground(self.space, (self.ground.body.position.x+10.0, self.ground.body.position.y - 0.5))
