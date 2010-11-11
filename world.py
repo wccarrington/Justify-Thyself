@@ -84,41 +84,41 @@ def add_ball(space):
     radius = 0.1
     inertia = pymunk.moment_for_circle(mass, 0, radius)
     body = pymunk.Body(mass, inertia)
-    body.position = (1.5, 0)
+    body.position = (1.5, 1.5)
     shape = pymunk.Poly(body, [(0.1, 0.0), (0.0, 0.1), (-0.1, 0.0), (0.0, -0.1)])
-    shape.friction = 1.0
+    shape.friction = 0.5
     space.add(body, shape)
     return shape
 
 def add_ground(space):
     body = pymunk.Body(pymunk.inf, pymunk.inf)
-    body.position = (1.5, 2.0)
-    line = pymunk.Segment(body, (-10.0, 0.0), (10.0, 0.0), 0.05)
-    line.friction = 1.0
+    body.position = (1.5, 2.5)
+    line = pymunk.Poly(body, [(-10.0, 0.0), (10.0, 0.0), (10.0, -1.1), (-10.0, -0.1)])
+    line.friction = 0.5
     space.add_static(line)
     return line
 
 def draw_ground(ground):
-    glColor(0.9, 0.1, 0.1, 1.0)
-    x,y = ground.body.position.x, ground.body.position.y
-    glBegin(GL_LINES)
-    glVertex(x+ground.a.x, y+ground.a.y, 0.0)
-    glVertex(x+ground.b.x, y+ground.b.y, 0.0)
+    glColor(0.1, 0.9, 0.1, 1.0)
+    points = ground.get_points()
+    glBegin(GL_POLYGON)
+    for p in points:
+        glVertex(p[0], p[1], 0.0)
     glEnd()
+#    x,y = ground.body.position.x, ground.body.position.y
+#    glBegin(GL_LINES)
+#    glVertex(x+ground.a.x, y+ground.a.y, 0.0)
+#    glVertex(x+ground.b.x, y+ground.b.y, 0.0)
+#    glEnd()
 
 def draw_ball(ball):
     x, y = ball.body.position.x, ball.body.position.y
-    glPushMatrix()
-    glTranslate(x, y, 0.0)
-    glRotate(180*ball.body.angle/math.pi, 0.0, 0.0, 1.0)
+    points = ball.get_points()
     glColor(1.0, 1.0, 1.0, 1.0)
-    glBegin(GL_QUADS)
-    glVertex(0.0, 0.1)
-    glVertex(0.1, 0.0)
-    glVertex(0.0, -0.1)
-    glVertex(-0.1, 0.0)
+    glBegin(GL_POLYGON)
+    for p in points:
+        glVertex(p[0], p[1], 0.0)
     glEnd()
-    glPopMatrix()
 
 class Game(World):
     def __init__(self, previous = None):
@@ -134,12 +134,19 @@ class Game(World):
     def keydown(self, key):
         if key == pygame.K_RIGHT:
             self.push = True
+            self.pushtime = 0
+            print 'push'
+            self.ball.body.apply_force((0.4,0.0), (0.0, -1.0))
+            self.ball.body.apply_force((-0.4,0.0), (0.0, 1.0))
     def keyup(self,key):
         if key == pygame.K_RIGHT:
             self.push = False
     def step(self, dt):
         if self.push:
-            print 'push'
-            self.ball.body.apply_impulse((0.005,0.0), (0.0, -1.0))
-            self.ball.body.apply_impulse((-0.005,0.0), (0.0, 1.0))
+            self.pushtime += dt
+            if self.pushtime < 2.0:
+                self.ball.body.apply_force((-0.2 * dt,0.0), (0.0, -1.0))
+                self.ball.body.apply_force((0.2 * dt,0.0), (0.0, 1.0))
+        if not self.push:
+            self.ball.body.reset_forces()
         self.space.step(dt)
