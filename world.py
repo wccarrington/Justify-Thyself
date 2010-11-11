@@ -69,7 +69,7 @@ class buffer:
 
 def drawtext(pos, text):
     text = texture.Text(str(text), 60)
-    size = (text.horizsize(0.3), 0.3)
+    size = (text.horizsize(0.2), 0.2)
     orig = (pos[0] - size[0]/2.0, pos[1] - size[1]/2.0)
     text()
     glBegin(GL_QUADS)
@@ -111,19 +111,19 @@ def add_ball(space):
     radius = 0.1
     inertia = pymunk.moment_for_circle(mass, 0, radius)
     body = pymunk.Body(mass, inertia)
-    body.position = (1.5, 1.5)
+    body.position = (1.5, 2.5)
     shape = pymunk.Poly(body, [(0.1, 0.0), (0.0, 0.1), (-0.1, 0.0), (0.0, -0.1)])
     shape.friction = 0.5
     space.add(body, shape)
     return shape
 
-def add_ground(space):
+def add_ground(space, pos):
     body = pymunk.Body(pymunk.inf, pymunk.inf)
-    body.position = (0.0, 2.5)
-    line = pymunk.Poly(body, [(0.0, 0.0), (10.0, -0.5), (10.0, 1.0), (0.0, 1.0)])
-    line.friction = 0.5
-    space.add_static(line)
-    return line
+    body.position = pos
+    shape = pymunk.Poly(body, [(0.0, 0.0), (10.0, -0.5), (10.0, 1.0), (0.0, 1.0)])
+    shape.friction = 0.5
+    space.add_static(shape)
+    return shape
 
 def draw_ground(ground):
     glColor(0.1, 0.9, 0.1, 1.0)
@@ -141,7 +141,7 @@ def draw_ground(ground):
 def draw_ball(ball):
     x, y = ball.body.position.x, ball.body.position.y
     points = ball.get_points()
-    glColor(1.0, 1.0, 1.0, 1.0)
+    glColor(0.4, 0.4, 0.4, 1.0)
     glBegin(GL_POLYGON)
     for p in points:
         glVertex(p[0], p[1], 0.0)
@@ -152,7 +152,8 @@ class Game(World):
         self.space = pymunk.Space()
         self.space.gravity = (0.0, 10.0)
         self.ball = add_ball(self.space)
-        self.ground = add_ground(self.space)
+        self.nextground = add_ground(self.space, (10.0, 2.5))
+        self.ground = add_ground(self.space, (0.0, 3.0))
         self.push = False
         self.pushtime = 0
         self.nextpronouncement = "Justify Thyself"
@@ -161,8 +162,8 @@ class Game(World):
         if key == pygame.K_RIGHT:
             self.push = True
             self.pushtime = 0
-            self.ball.body.apply_force((0.4,0.0), (0.0, -1.0))
-            self.ball.body.apply_force((-0.4,0.0), (0.0, 1.0))
+            self.ball.body.apply_force((0.7,0.0), (0.0, -1.0))
+            self.ball.body.apply_force((-0.7,0.0), (0.0, 1.0))
     def keyup(self,key):
         if key == pygame.K_RIGHT:
             self.push = False
@@ -175,16 +176,17 @@ class Game(World):
         glTranslate(-self.ball.body.position.x + 2, -self.ball.body.position.y + 1.5, 0.0)
         draw_ball(self.ball)
         draw_ground(self.ground)
+        draw_ground(self.nextground)
     def step(self, dt):
         self.pronouncementtimer -= dt
         if self.pronouncementtimer < -5.0:
             self.nextpronouncement = random.choice(pronouncements)
-            self.pronouncementtimer = 15.0
+            self.pronouncementtimer = 5.0
         if self.push:
             self.pushtime += dt
-            if self.pushtime < 2.0:
-                self.ball.body.apply_force((-0.2 * dt,0.0), (0.0, -1.0))
-                self.ball.body.apply_force((0.2 * dt,0.0), (0.0, 1.0))
+            if self.pushtime < 0.1:
+                self.ball.body.apply_force((-5 * dt,0.0), (0.0, -1.0))
+                self.ball.body.apply_force((5 * dt,0.0), (0.0, 1.0))
         if not self.push:
             self.ball.body.reset_forces()
         self.space.step(dt)
