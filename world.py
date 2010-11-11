@@ -14,6 +14,33 @@ vertexLoc = None
 texCoord0Loc = None
 normalLoc = None
 
+pronouncements = ['Decide to Win',
+                  'Make Yourself Better',
+                  'Live Up To Your Image',
+                  'Be A Man',
+                  'Keep Pushing',
+                  'Giving Up Is For Wimps',
+                  'Follow The Script',
+                  'Someday You\'ll Join Us',
+                  'It\'s Easy If You Try',
+                  'Your Works Will Save You',
+                  'The Higher You Push It, The Better You Are',
+                  'Grow Up And Stop Playing With Your Toys',
+                  'There Must Be Something Wrong With You',
+                  'You Deserve It',
+                  'You\'re A Good Person',
+                  'Become an Adult, Buy A House',
+                  'Get A Real Job',
+                  'You Have To Be Good Enough',
+                  'Mistakes Are Inexcusable',
+                  'Imagine There\'s No Heaven',
+                  'Only Losers Live With Their Parents',
+                  'Your Career Defines You',
+                  'Success Is Always Obvious',
+                  'Bodies Are Useless',
+                  'Live For Yourself',
+                  'Work Will Make You Free']
+
 def getworld():
     global currentworld
     return currentworld
@@ -41,8 +68,8 @@ class buffer:
         glDisableClientState(GL_VERTEX_ARRAY)
 
 def drawtext(pos, text):
-    text = texture.Text(str(text))
-    size = (text.horizsize(0.1), 0.1)
+    text = texture.Text(str(text), 60)
+    size = (text.horizsize(0.3), 0.3)
     orig = (pos[0] - size[0]/2.0, pos[1] - size[1]/2.0)
     text()
     glBegin(GL_QUADS)
@@ -92,8 +119,8 @@ def add_ball(space):
 
 def add_ground(space):
     body = pymunk.Body(pymunk.inf, pymunk.inf)
-    body.position = (1.5, 2.5)
-    line = pymunk.Poly(body, [(-10.0, 0.0), (10.0, 0.0), (10.0, -1.1), (-10.0, -0.1)])
+    body.position = (0.0, 2.5)
+    line = pymunk.Poly(body, [(0.0, 0.0), (10.0, -0.5), (10.0, 1.0), (0.0, 1.0)])
     line.friction = 0.5
     space.add_static(line)
     return line
@@ -128,11 +155,8 @@ class Game(World):
         self.ground = add_ground(self.space)
         self.push = False
         self.pushtime = 0
-    def draw(self):
-        glLoadIdentity()
-        glTranslate(-self.ball.body.position.x + 2, -self.ball.body.position.y + 1.5, 0.0)
-        draw_ball(self.ball)
-        draw_ground(self.ground)
+        self.nextpronouncement = "Justify Thyself"
+        self.pronouncementtimer = 0
     def keydown(self, key):
         if key == pygame.K_RIGHT:
             self.push = True
@@ -142,7 +166,20 @@ class Game(World):
     def keyup(self,key):
         if key == pygame.K_RIGHT:
             self.push = False
+            self.ball.body.apply_impulse((0.0, -0.1), (0.0, 0.0))
+    def draw(self):
+        if self.pronouncementtimer < 0.0:
+            glColor(1.0, 1.0, 1.0, 1.0+self.pronouncementtimer/5.0)
+            drawtext((2.0, 0.5), self.nextpronouncement)
+        glLoadIdentity()
+        glTranslate(-self.ball.body.position.x + 2, -self.ball.body.position.y + 1.5, 0.0)
+        draw_ball(self.ball)
+        draw_ground(self.ground)
     def step(self, dt):
+        self.pronouncementtimer -= dt
+        if self.pronouncementtimer < -5.0:
+            self.nextpronouncement = random.choice(pronouncements)
+            self.pronouncementtimer = 15.0
         if self.push:
             self.pushtime += dt
             if self.pushtime < 2.0:
