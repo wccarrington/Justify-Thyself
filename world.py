@@ -191,7 +191,7 @@ class Game(World):
         self.pronouncementtimer -= dt
         if self.pronouncementtimer < -5.0:
             self.nextpronouncement = random.choice(pronouncements)
-            self.pronouncementtimer = 5.0
+            self.pronouncementtimer = 10.0
         if self.push:
             self.pushtime += dt
             if self.pushtime < 0.1:
